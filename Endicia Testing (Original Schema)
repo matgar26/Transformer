@@ -52,7 +52,7 @@ Sub Transform()
     ReDim cJohnnyJohnson(RowCount, 27)
     ReDim cOrphan(RowCount, 27)
 
-
+    ' Counter for each rep
     Dim iCMG As Integer
     Dim iBusinessFacilitating As Integer
     Dim iUnitedEx As Integer
@@ -61,7 +61,29 @@ Sub Transform()
     Dim iJohnnyJohnson As Integer
     Dim iOrphan As Integer
 
+    ' ' The conatiner for the credit card charges for each rep
+    ' Dim creditCMG As Integer
+    ' Dim creditBusinessFacilitating As Integer
+    ' Dim creditUnitedEx As Integer
+    ' Dim creditHapHolmstead As Integer
+    ' Dim creditHouse As Integer
+    ' Dim creditJohnnyJohnson As Integer
+    ' Dim creditOrphan As Integer
+    '
+    ' 'the container for the endicia fee for each rep'
+    ' Dim feeCMG As double
+    ' Dim feeBusinessFacilitating As Integer
+    ' Dim feeUnitedEx As Integer
+    ' Dim feeHapHolmstead As Integer
+    ' Dim feeHouse As Integer
+    ' Dim feeJohnnyJohnson As Integer
+    ' Dim feeOrphan As Integer
+
+    'Determines if their are errors'
     Dim bBusinessFacilitating As Boolean
+    Dim bUnitedEx As Boolean
+    Dim bJohnnyJohnson As Boolean
+
 
     iCMG = 0
     iBusinessFacilitating = 0
@@ -87,7 +109,25 @@ Sub Transform()
     rJohnnyJohnson = 0
     rOrphan = 0
 
+    creditCMG = 0
+    creditBusinessFacilitating = 0
+    creditUnitedEx = 0
+    creditHapHolmstead = 0
+    creditHouse = 0
+    creditJohnnyJohnson = 0
+    creditOrphan = 0
+
+    feeCMG = 0
+    feeBusinessFacilitating = 0
+    feeUnitedEx = 0
+    feeHapHolmstead = 0
+    feeHouse = 0
+    feeJohnnyJohnson = 0
+    feeOrphan = 0
+
     bBusinessFacilitating = false
+    bUnitedEx = false
+    bJohnnyJohnson = false
 
     Data = Worksheets("Original Report").Range("A2:AA" & RowCount).Value
     Customers = Worksheets("Customer").Range("A2:AA" & RowCountCust).Value
@@ -127,15 +167,19 @@ Sub Transform()
                             For f = 1 To ColumnCount
                                 cCMG(iCMG, f - 1) = Data(x, f)
                             Next f
-                            ' calculate the margin column by subtracting wholesale from retail and then subtracting credit card fees and then the Endicia min fee.
-                            cCMG(iCMG, 15) = cCMG(iCMG, 13) - cCMG(iCMG, 14) - cCMG(iCMG, 12) - cCMG(iCMG,26)
-                            ' calculates the total earned column by multiplying the margin by the split rate
-                            cCMG(iCMG, 27) = (cCMG(iCMG, 15) * Margin)
-                            ' This adds to the rCMG if its a return, and to the tCMG if not
+                            ' calculate the margin column by subtracting wholesale from retail.
+                            cCMG(iCMG, 15) = cCMG(iCMG, 13) - cCMG(iCMG, 14)
+                            ' calculates the total earned column by taking the margin
+                            cCMG(iCMG, 27) = cCMG(iCMG, 15)
+                            'this puts the cc fee into the total credit card contatiner for the rep'
+                            creditCMG = creditCMG + cCMG(iCMG, 12)
+                            ' This adds to the rCMG if its a refund, and to the tCMG if not
                             If cCMG(iCMG, 10) = "POSTAGE REFUND" Then
                                 rCMG = rCMG + cCMG(iCMG, 27)
                             Else
                                 tCMG = tCMG + cCMG(iCMG, 27)
+                                ' this puts the endicia min fee into the total for each rep
+                                feeCMG = feeCMG + cCMG(iCMG, 26)
                             End if
                             iCMG = iCMG + 1
                         Case "Business Facilitating"
@@ -343,10 +387,14 @@ Sub Transform()
     Sheets("CMG").Range("A2:AB" & UBound(cCMG, 1)).Value = cCMG
     Sheets("CMG").Range("AA" & iCMG + 2).Value = "Subtotal"
     Sheets("CMG").Range("AB" & iCMG + 2).Value = tCMG
-    Sheets("CMG").Range("AA" & iCMG + 3).Value = "Returns"
-    Sheets("CMG").Range("AB" & iCMG + 3).Value = rCMG
-    Sheets("CMG").Range("AA" & iCMG + 4).Value = "Total"
-    Sheets("CMG").Range("AB" & iCMG + 4).Value = tCMG - rCMG
+    Sheets("CMG").Range("AA" & iCMG + 3).Value = "Credit Card Fees"
+    Sheets("CMG").Range("AB" & iCMG + 3).Value = creditCMG
+    Sheets("CMG").Range("AA" & iCMG + 4).Value = "Endicia Fees"
+    Sheets("CMG").Range("AB" & iCMG + 4).Value = feeCMG
+    Sheets("CMG").Range("AA" & iCMG + 5).Value = "Refunds"
+    Sheets("CMG").Range("AB" & iCMG + 5).Value = rCMG
+    Sheets("CMG").Range("AA" & iCMG + 6).Value = "Total"
+    Sheets("CMG").Range("AB" & iCMG + 6).Value = tCMG - rCMG - creditCMG - feeCMG
 
     Sheets("Business Facilitating").Range("A2:AB" & UBound(cBusinessFacilitating, 1)).Value = cBusinessFacilitating
     Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 2).Value = "Subtotal"
@@ -361,7 +409,7 @@ Sub Transform()
     Sheets("UnitedEx").Range("A2:AB" & UBound(cUnitedEx, 1)).Value = cUnitedEx
     Sheets("UnitedEx").Range("AA" & iUnitedEx + 2).Value = "Subtotal"
     Sheets("UnitedEx").Range("AB" & iUnitedEx + 2).Value = tUnitedEx
-    Sheets("UnitedEx").Range("AA" & iUnitedEx + 3).Value = "Returns"
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 3).Value = "Refunds"
     Sheets("UnitedEx").Range("AB" & iUnitedEx + 3).Value = rUnitedEx
     Sheets("UnitedEx").Range("AA" & iUnitedEx + 4).Value = "Total"
     Sheets("UnitedEx").Range("AB" & iUnitedEx + 4).Value = tUnitedEx - rUnitedEx
@@ -404,4 +452,6 @@ End Sub
 'Add a button that clears the original report.
 'What do I do for "postage purchase" orders under the transaction type column
 'What do I do for "Parcel" in package type column
+' -anything that is first class and not '
+'- also skip anything that is media mail, library mail, '
 'Why does business facilitating sum of all rows and total have a difference of .02?
