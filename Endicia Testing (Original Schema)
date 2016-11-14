@@ -238,7 +238,7 @@ Sub Transform()
                             For f = 1 To ColumnCount
                                 cUnitedEx(iUnitedEx, f - 1) = Data(x, f)
                             Next f
-
+                            ' gets the rows mailtype
                             MailType = cUnitedEx(iUnitedEx, 24)
 
                             Select Case MailType
@@ -251,70 +251,102 @@ Sub Transform()
                             Case "Priority Mail Express"
                                 SheetArray = PriorityMailExpress
                                 SheetArray2 = PriorityMailExpress2
-                            Case "First Class"
-                                SheetArray = FirstClassMail
-                                SheetArray2 = FirstClassMail2
                             Case "Priority Mail Express International"
                                 SheetArray = PriorityMailExpressInt
                                 SheetArray2 = PriorityMailExpressInt2
                             Case "First Class Package International Service"
                                 SheetArray = FirstClassPackage
                                 SheetArray2 = FirstClassPackage2
+                            Case Else
+                                other = True
                             End Select
 
-
-                            matchFound2 = False
-                            For a = 1 To UBound(SheetArray, 1)
-                                For b = 1 To UBound(SheetArray, 2)
-                                    If SheetArray(a, b) Like cUnitedEx(iUnitedEx, 14) Then
-                                        cUnitedEx(iUnitedEx, 14) = SheetArray2(a, b)
-                                        Sheets("Original Report").Cells(x + 1, 12).Value = cUnitedEx(iUnitedEx, 14)
-                                        matchFound2 = True
-                                        Exit For
-                                    End If
-                                Next b
-                                If matchFound2 Then Exit For
-                            Next a
-                            If Not matchFound2 Then Sheets("Original Report").Cells(x + 2, 11).Value = "err"
-
-                            If cUnitedEx(iUnitedEx, 10) = "POSTAGE REFUND" Then
-                                rUnitedEx = rUnitedEx + cUnitedEx(iUnitedEx, 14)
+                            If other Then
+                                ' calculates total for the row by subtracting retail from wholesale
+                                cUnitedEx(iUnitedEx, 15) = cUnitedEx(iUnitedEx, 13) - cUnitedEx(iUnitedEx, 14)
+                                ' row total is the same as the margin column
+                                cUnitedEx(iUnitedEx, 27) = cUnitedEx(iUnitedEx, 15)
+                                matchFound2 = True
                             Else
-                                tUnitedEx = tUnitedEx + cUnitedEx(iUnitedEx, 14)
-                            End if
-
+                                matchFound2 = False
+                                For a = 1 To UBound(SheetArray, 1)
+                                    For b = 1 To UBound(SheetArray, 2)
+                                        ' if it finds the wholesale rate in the corresponding sheetarray
+                                        If SheetArray(a, b) Like cUnitedEx(iUnitedEx, 14) Then
+                                            ' looks for the same coordinates from sheet array one, in sheet array 2
+                                            cUnitedEx(iUnitedEx, 14) = SheetArray2(a, b)
+                                            ' calculates total for the row by subtracting retail from wholesale
+                                            cUnitedEx(iUnitedEx, 15) = cUnitedEx(iUnitedEx, 13) - cUnitedEx(iUnitedEx, 14)
+                                            ' row total is the same as the margin column
+                                            cUnitedEx(iUnitedEx, 27) = cUnitedEx(iUnitedEx, 15)
+                                            matchFound2 = True
+                                            Exit For
+                                        End If
+                                    Next b
+                                    If matchFound2 Then Exit For
+                                Next a
+                            End If
+                            ' if it cant find the wholesale value in the sheet array, put an err in the total column
+                            If Not matchFound2 Then
+                                cUnitedEx(iUnitedEx, 27) = "error: this row will not be reflected in the totals"
+                                bUnitedEx = true
+                            End If
+                            ' if there are no errors and its a refund
+                            If matchFound2 And cUnitedEx(iUnitedEx, 10) = "POSTAGE REFUND" Then
+                                rUnitedEx = rUnitedEx + cUnitedEx(iUnitedEx, 27)
+                            ' if there are no errors and its a print
+                            Elseif matchFound2 And cUnitedEx(iUnitedEx, 10) <> "POSTAGE REFUND" Then
+                                tUnitedEx = tUnitedEx + cUnitedEx(iUnitedEx, 27)
+                                ' this puts the endicia min fee into the total for each rep
+                                feeUnitedEx = feeUnitedEx + cUnitedEx(iUnitedEx, 26)
+                                'this puts the cc fee into the total credit card contatiner for the rep'
+                                creditUnitedEx = creditUnitedEx + cUnitedEx(iUnitedEx, 12)
+                            End If
+                            other = False
                             iUnitedEx = iUnitedEx + 1
                         Case "Hap Holmstead"
                             For f = 1 To ColumnCount
                                 cHapHolmstead(iHapHolmstead, f - 1) = Data(x, f)
                             Next f
-                            cHapHolmstead(iHapHolmstead, 27) = ((cHapHolmstead(iHapHolmstead, 14) - cHapHolmstead(iHapHolmstead, 12)) * Margin)
-
+                            ' calculate the margin column by subtracting wholesale from retail.
+                            cHapHolmstead(iHapHolmstead, 15) = cHapHolmstead(iHapHolmstead, 13) - cHapHolmstead(iHapHolmstead, 14)
+                            ' calculates the total earned column by taking the margin
+                            cHapHolmstead(iHapHolmstead, 27) = cHapHolmstead(iHapHolmstead, 15)
+                            'this puts the cc fee into the total credit card contatiner for the rep'
+                            creditHapHolmstead = creditHapHolmstead + cHapHolmstead(iHapHolmstead, 12)
+                            ' This adds to the rCMG if its a refund, and to the tCMG if not
                             If cHapHolmstead(iHapHolmstead, 10) = "POSTAGE REFUND" Then
-                                rHapHolmstead = rHapHolmstead + cHapHolmstead(iHapHolmstead, 14)
+                                rHapHolmstead = rHapHolmstead + cHapHolmstead(iHapHolmstead, 27)
                             Else
-                                tHapHolmstead = tHapHolmstead + cHapHolmstead(iHapHolmstead, 14)
+                                tHapHolmstead = tHapHolmstead + cHapHolmstead(iHapHolmstead, 27)
+                                ' this puts the endicia min fee into the total for each rep
+                                feeHapHolmstead = feeHapHolmstead + cHapHolmstead(iHapHolmstead, 26)
                             End if
-
                             iHapHolmstead = iHapHolmstead + 1
                         Case "House"
                             For f = 1 To ColumnCount
                                 cHouse(iHouse, f - 1) = Data(x, f)
                             Next f
-                            cHouse(iHouse, 27) = ((Data(x, 14) - Data(x, 12)) * Margin)
-
+                            ' calculate the margin column by subtracting wholesale from retail.
+                            cHouse(iHouse, 15) = cHouse(iHouse, 13) - cHouse(iHouse, 14)
+                            ' calculates the total earned column by taking the margin
+                            cHouse(iHouse, 27) = cHouse(iHouse, 15)
+                            'this puts the cc fee into the total credit card contatiner for the rep'
+                            creditHouse = creditHouse + cHouse(iHouse, 12)
+                            ' This adds to the rCMG if its a refund, and to the tCMG if not
                             If cHouse(iHouse, 10) = "POSTAGE REFUND" Then
-                                rHouse = rHouse + cHouse(iHouse, 14)
+                                rHouse = rHouse + cHouse(iHouse, 27)
                             Else
-                                tHouse = tHouse + cHouse(iHouse, 14)
+                                tHouse = tHouse + cHouse(iHouse, 27)
+                                ' this puts the endicia min fee into the total for each rep
+                                feeHouse = feeHouse + cHouse(iHouse, 26)
                             End if
-
                             iHouse = iHouse + 1
                         Case "Johnny Johnson"
                             For f = 1 To ColumnCount
                                 cJohnnyJohnson(iJohnnyJohnson, f - 1) = Data(x, f)
                             Next f
-
+                            ' gets the rows mailtype
                             MailType = cJohnnyJohnson(iJohnnyJohnson, 24)
 
                             Select Case MailType
@@ -327,37 +359,58 @@ Sub Transform()
                             Case "Priority Mail Express"
                                 SheetArray = PriorityMailExpress
                                 SheetArray2 = PriorityMailExpress2
-                            Case "First Class"
-                                SheetArray = FirstClassMail
-                                SheetArray2 = FirstClassMail2
                             Case "Priority Mail Express International"
                                 SheetArray = PriorityMailExpressInt
                                 SheetArray2 = PriorityMailExpressInt2
                             Case "First Class Package International Service"
                                 SheetArray = FirstClassPackage
                                 SheetArray2 = FirstClassPackage2
+                            Case Else
+                                other = True
                             End Select
 
-                            matchFound2 = False
-                            For a = 1 To UBound(SheetArray, 1)
-                                For b = 1 To UBound(SheetArray, 2)
-                                    If SheetArray(a, b) Like cJohnnyJohnson(iJohnnyJohnson, 14) Then
-                                        cJohnnyJohnson(iJohnnyJohnson, 14) = SheetArray2(a, b)
-                                        Sheets("Original Report").Cells(x + 1, 12).Value = cJohnnyJohnson(iJohnnyJohnson, 14)
-                                        matchFound2 = True
-                                        Exit For
-                                    End If
-                                Next b
-                                If matchFound2 Then Exit For
-                            Next a
-                            If Not matchFound2 Then Sheets("Original Report").Cells(x + 2, 11).Value = "err"
-
-                            If cJohnnyJohnson(iJohnnyJohnson, 10) = "POSTAGE REFUND" Then
-                                rJohnnyJohnson = rJohnnyJohnson + cJohnnyJohnson(iJohnnyJohnson, 14)
+                            If other Then
+                                ' calculates total for the row by subtracting retail from wholesale
+                                cJohnnyJohnson(iJohnnyJohnson, 15) = cJohnnyJohnson(iJohnnyJohnson, 13) - cJohnnyJohnson(iJohnnyJohnson, 14)
+                                ' row total is the same as the margin column
+                                cJohnnyJohnson(iJohnnyJohnson, 27) = cJohnnyJohnson(iJohnnyJohnson, 15)
+                                matchFound2 = True
                             Else
-                                tJohnnyJohnson = tJohnnyJohnson + cJohnnyJohnson(iJohnnyJohnson, 14)
-                            End if
-
+                                matchFound2 = False
+                                For a = 1 To UBound(SheetArray, 1)
+                                    For b = 1 To UBound(SheetArray, 2)
+                                        ' if it finds the wholesale rate in the corresponding sheetarray
+                                        If SheetArray(a, b) Like cJohnnyJohnson(iJohnnyJohnson, 14) Then
+                                            ' looks for the same coordinates from sheet array one, in sheet array 2
+                                            cJohnnyJohnson(iJohnnyJohnson, 14) = SheetArray2(a, b)
+                                            ' calculates total for the row by subtracting retail from wholesale
+                                            cJohnnyJohnson(iJohnnyJohnson, 15) = cJohnnyJohnson(iJohnnyJohnson, 13) - cJohnnyJohnson(iJohnnyJohnson, 14)
+                                            ' row total is the same as the margin column
+                                            cJohnnyJohnson(iJohnnyJohnson, 27) = cJohnnyJohnson(iJohnnyJohnson, 15)
+                                            matchFound2 = True
+                                            Exit For
+                                        End If
+                                    Next b
+                                    If matchFound2 Then Exit For
+                                Next a
+                            End If
+                            ' if it cant find the wholesale value in the sheet array, put an err in the total column
+                            If Not matchFound2 Then
+                                cJohnnyJohnson(iJohnnyJohnson, 27) = "error: this row will not be reflected in the totals"
+                                bJohnnyJohnson = true
+                            End If
+                            ' if there are no errors and its a refund
+                            If matchFound2 And cJohnnyJohnson(iJohnnyJohnson, 10) = "POSTAGE REFUND" Then
+                                rJohnnyJohnson = rJohnnyJohnson + cJohnnyJohnson(iJohnnyJohnson, 27)
+                            ' if there are no errors and its a print
+                            Elseif matchFound2 And cBusinessFacilitating(iBusinessFacilitating, 10) <> "POSTAGE REFUND" Then
+                                tJohnnyJohnson = tJohnnyJohnson + cJohnnyJohnson(iJohnnyJohnson, 27)
+                                ' this puts the endicia min fee into the total for each rep
+                                feeJohnnyJohnson = feeJohnnyJohnson + cJohnnyJohnson(iJohnnyJohnson, 26)
+                                'this puts the cc fee into the total credit card contatiner for the rep'
+                                creditJohnnyJohnson = creditJohnnyJohnson + cJohnnyJohnson(iJohnnyJohnson, 12)
+                            End If
+                            other = False
                             iJohnnyJohnson = iJohnnyJohnson + 1
                         End Select
 
@@ -402,36 +455,56 @@ Sub Transform()
     Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 7).Value = tBusinessFacilitating - rBusinessFacilitating - creditBusinessFacilitating - feeBusinessFacilitating
 
     Sheets("UnitedEx").Range("A2:AB" & UBound(cUnitedEx, 1)).Value = cUnitedEx
-    Sheets("UnitedEx").Range("AA" & iUnitedEx + 2).Value = "Subtotal"
-    Sheets("UnitedEx").Range("AB" & iUnitedEx + 2).Value = tUnitedEx
-    Sheets("UnitedEx").Range("AA" & iUnitedEx + 3).Value = "Refunds"
-    Sheets("UnitedEx").Range("AB" & iUnitedEx + 3).Value = rUnitedEx
-    Sheets("UnitedEx").Range("AA" & iUnitedEx + 4).Value = "Total"
-    Sheets("UnitedEx").Range("AB" & iUnitedEx + 4).Value = tUnitedEx - rUnitedEx
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 2).Value = "Errors"
+    Sheets("UnitedEx").Range("AB" & iUnitedEx + 2).Value = bUnitedEx
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 3).Value = "Subtotal"
+    Sheets("UnitedEx").Range("AB" & iUnitedEx + 3).Value = tUnitedEx
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 4).Value = "Credit Card Fees"
+    Sheets("UnitedEx").Range("AB" & iUnitedEx + 4).Value = creditUnitedEx
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 5).Value = "Endicia Fees"
+    Sheets("UnitedEx").Range("AB" & iUnitedEx + 5).Value = feeUnitedEx
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 6).Value = "Refunds"
+    Sheets("UnitedEx").Range("AB" & iUnitedEx + 6).Value = rUnitedEx
+    Sheets("UnitedEx").Range("AA" & iUnitedEx + 7).Value = "Total"
+    Sheets("UnitedEx").Range("AB" & iUnitedEx + 7).Value = tUnitedEx - rUnitedEx - creditUnitedEx - feeUnitedEx
 
     Sheets("Hap Holmstead").Range("A2:AB" & UBound(cHapHolmstead, 1)).Value = cHapHolmstead
     Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 2).Value = "Subtotal"
     Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 2).Value = tHapHolmstead
-    Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 3).Value = "Returns"
-    Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 3).Value = rHapHolmstead
-    Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 4).Value = "Total"
-    Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 4).Value = tHapHolmstead - rHapHolmstead
+    Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 3).Value = "Credit Card Fees"
+    Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 3).Value = creditHapHolmstead
+    Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 4).Value = "Endicia Fees"
+    Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 4).Value = feeHapHolmstead
+    Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 5).Value = "Refunds"
+    Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 5).Value = rHapHolmstead
+    Sheets("Hap Holmstead").Range("AA" & iHapHolmstead + 6).Value = "Total"
+    Sheets("Hap Holmstead").Range("AB" & iHapHolmstead + 6).Value = tHapHolmstead - rHapHolmstead - creditHapHolmstead - feeHapHolmstead
 
     Sheets("House").Range("A2:AB" & UBound(cHouse, 1)).Value = cHouse
     Sheets("House").Range("AA" & iHouse + 2).Value = "Subtotal"
     Sheets("House").Range("AB" & iHouse + 2).Value = tHouse
-    Sheets("House").Range("AA" & iHouse + 3).Value = "Returns"
-    Sheets("House").Range("AB" & iHouse + 3).Value = rHouse
-    Sheets("House").Range("AA" & iHouse + 4).Value = "Total"
-    Sheets("House").Range("AB" & iHouse + 4).Value = tHouse - rHouse
+    Sheets("House").Range("AA" & iHouse + 3).Value = "Credit Card Fees"
+    Sheets("House").Range("AB" & iHouse + 3).Value = creditHouse
+    Sheets("House").Range("AA" & iHouse + 4).Value = "Endicia Fees"
+    Sheets("House").Range("AB" & iHouse + 4).Value = feeHouse
+    Sheets("House").Range("AA" & iHouse + 5).Value = "Refunds"
+    Sheets("House").Range("AB" & iHouse + 5).Value = rHouse
+    Sheets("House").Range("AA" & iHouse + 6).Value = "Total"
+    Sheets("House").Range("AB" & iHouse + 6).Value = tHouse - rHouse - creditHouse - feeHouse
 
     Sheets("Johnny Johnson").Range("A2:AB" & UBound(cJohnnyJohnson, 1)).Value = cJohnnyJohnson
-    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 2).Value = "Subtotal"
-    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 2).Value = tJohnnyJohnson
-    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 3).Value = "Returns"
-    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 3).Value = rJohnnyJohnson
-    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 4).Value = "Total"
-    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 4).Value = tJohnnyJohnson - rJohnnyJohnson
+    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 2).Value = "Errors"
+    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 2).Value = bJohnnyJohnson
+    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 3).Value = "Subtotal"
+    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 3).Value = tJohnnyJohnson
+    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 4).Value = "Credit Card Fees"
+    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 4).Value = creditJohnnyJohnson
+    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 5).Value = "Endicia Fees"
+    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 5).Value = feeJohnnyJohnson
+    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 6).Value = "Refunds"
+    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 6).Value = rJohnnyJohnson
+    Sheets("Johnny Johnson").Range("AA" & iJohnnyJohnson + 7).Value = "Total"
+    Sheets("Johnny Johnson").Range("AB" & iJohnnyJohnson + 7).Value = tJohnnyJohnson - rJohnnyJohnson - creditJohnnyJohnson - feeJohnnyJohnson
 
     Sheets("Orphans").Range("A2:AB" & UBound(cOrphan, 1)).Value = cOrphan
 
