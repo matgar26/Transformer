@@ -1,0 +1,99 @@
+Sub Transform2()
+    'Optimizing Run Speeds
+    Application.Calculation = xlCalculationManual
+    Application.ScreenUpdating = False
+
+
+    Sheets("Original Report").Activate
+
+    Dim config As Worksheet
+    Dim cell As Range
+    Dim RowCount As Long
+    Dim SheetName As Variant
+    Dim SheetName2 As String
+
+    Dim Data() As Variant
+
+    Dim PriorityMail() As Variant
+    Dim PriorityMail2() As Variant
+    Dim PriorityMailExpress() As Variant
+    Dim PriorityMailExpress2() As Variant
+    Dim FirstClassMail() As Variant
+    Dim FirstClassMail2() As Variant
+    Dim PriorityMailInt() As Variant
+    Dim PriorityMailInt2() As Variant
+    Dim PriorityMailExpressInt() As Variant
+    Dim PriorityMailExpressInt2() As Variant
+    Dim FirstClassPackage() As Variant
+    Dim FirstClassPackage2() As Variant
+
+    RowCount = Range("A" & Rows.Count).End(xlUp).Row
+    Data = Worksheets("Original Report").Range("A2:AB" & RowCount).Value
+    PriorityMail = Worksheets("Priority Mail").Range("B2:J92").Value
+    PriorityMail2 = Worksheets("Priority Mail").Range("N2:V92").Value
+
+    PriorityMailInt = Worksheets("Priority Mail International").Range("B2:Y77").Value
+    PriorityMailInt2 = Worksheets("Priority Mail International").Range("AC2:AZ77").Value
+
+    PriorityMailExpress = Worksheets("Priority Mail Express Intl").Range("B2:J77").Value
+    PriorityMailExpress2 = Worksheets("Priority Mail Express Intl").Range("N2:V77").Value
+
+    FirstClassMail = Worksheets("First-Class Mail").Range("B2:J17").Value
+    FirstClassMail2 = Worksheets("First-Class Mail").Range("N2:V17").Value
+
+    PriorityMailExpressInt = Worksheets("Priority Mail Express Intl").Range("B2:R75").Value
+    PriorityMailExpressInt2 = Worksheets("Priority Mail Express Intl").Range("V2:AL75").Value
+
+    FirstClassPackage = Worksheets("First-Class Package Intl").Range("B2:J23").Value
+    FirstClassPackage2 = Worksheets("First-Class Package Intl").Range("N2:V23").Value
+
+
+    For x = 1 To RowCount - 1
+        DoEvents
+
+        MailType = Data(x, 25)
+        On Error Resume Next
+        Retail = Data(x, 15)
+
+        Select Case MailType
+        Case "Priority Mail"
+            SheetArray = PriorityMail
+            SheetArray2 = PriorityMail2
+        Case "Priority Mail International Parcels"
+            SheetArray = PriorityMailInt
+            SheetArray2 = PriorityMailInt2
+        Case "Priority Mail Express"
+            SheetArray = PriorityMailExpress
+            SheetArray2 = PriorityMailExpress2
+        Case "First Class"
+            SheetArray = FirstClassMail
+            SheetArray2 = FirstClassMail2
+        Case "Priority Mail Express International"
+            SheetArray = PriorityMailExpressInt
+            SheetArray2 = PriorityMailExpressInt2
+        Case "First Class Package International Service"
+            SheetArray = FirstClassPackage
+            SheetArray2 = FirstClassPackage2
+        End Select
+
+        Dim matchFound As Boolean
+        matchFound = False
+        For i = 1 To UBound(SheetArray, 1)
+            For j = 1 To UBound(SheetArray, 2)
+                If SheetArray(i, j) Like Retail Then
+                    Data(x, 15) = SheetArray2(i, j)
+                    Sheets("Original Report").Cells(x + 1, 15).Value = Data(x, 15)
+                    matchFound = True
+                    Exit For
+                End If
+            Next j
+            If matchFound Then Exit For
+        Next i
+        If Not matchFound Then Sheets("Original Report").Cells(x + 1, 28).Value = "err"
+    Next x
+
+    Erase Data
+    RowCount = Null
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+End Sub

@@ -1,0 +1,25 @@
+Sub RemoveBlankRows()
+
+    Dim rng As Range
+
+    Sheets("Original Report").Activate
+    RowCount = Range("A" & Rows.Count).End(xlUp).Row
+
+    'Store blank cells inside a variable
+      On Error GoTo NoBlanksFound
+        Set del = Range(Cells(1, 1), Cells(RowCount, 1)).SpecialCells(xlCellTypeBlanks)
+      On Error GoTo 0
+
+    'Delete entire row of blank cells found
+      del.EntireRow.Delete
+    
+    MsgBox("All Blank Rows Have Been Deleted")
+    Exit Sub
+
+    'ERROR HANLDER
+    NoBlanksFound:
+      MsgBox "No Blank cells were found"
+
+    RowCount = Null
+
+End Sub
