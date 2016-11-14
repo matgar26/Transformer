@@ -61,24 +61,6 @@ Sub Transform()
     Dim iJohnnyJohnson As Integer
     Dim iOrphan As Integer
 
-    ' ' The conatiner for the credit card charges for each rep
-    ' Dim creditCMG As Integer
-    ' Dim creditBusinessFacilitating As Integer
-    ' Dim creditUnitedEx As Integer
-    ' Dim creditHapHolmstead As Integer
-    ' Dim creditHouse As Integer
-    ' Dim creditJohnnyJohnson As Integer
-    ' Dim creditOrphan As Integer
-    '
-    ' 'the container for the endicia fee for each rep'
-    ' Dim feeCMG As double
-    ' Dim feeBusinessFacilitating As Integer
-    ' Dim feeUnitedEx As Integer
-    ' Dim feeHapHolmstead As Integer
-    ' Dim feeHouse As Integer
-    ' Dim feeJohnnyJohnson As Integer
-    ' Dim feeOrphan As Integer
-
     'Determines if their are errors'
     Dim bBusinessFacilitating As Boolean
     Dim bUnitedEx As Boolean
@@ -447,10 +429,7 @@ End Sub
 
 
 'TODO:
-'What exactly am I subtracting on refunds? = you subtract the margin (make sure you subtract whatever they paid)
-'What to do when wholesale is higher than retail. See row 98. Maybe it wont ever be a problem with prod data?
 'Add a button that clears the original report.
-'What do I do for "postage purchase" orders under the transaction type column
 'What do I do for "Parcel" in package type column
 ' -anything that is first class and not '
 '- also skip anything that is media mail, library mail, '
