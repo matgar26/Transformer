@@ -9,8 +9,6 @@ Sub Transform()
     Dim config As Worksheet
     Dim cell As Range
     Dim RowCount As Long
-    Dim SheetName As Variant
-    Dim SheetName2 As String
     Dim Rep As String
     Dim Margin As Double
     Dim matchFound2 As Boolean
@@ -182,47 +180,58 @@ Sub Transform()
                             Case "Priority Mail Express"
                                 SheetArray = PriorityMailExpress
                                 SheetArray2 = PriorityMailExpress2
-                            Case "First Class"
-                                SheetArray = FirstClassMail
-                                SheetArray2 = FirstClassMail2
                             Case "Priority Mail Express International"
                                 SheetArray = PriorityMailExpressInt
                                 SheetArray2 = PriorityMailExpressInt2
                             Case "First Class Package International Service"
                                 SheetArray = FirstClassPackage
                                 SheetArray2 = FirstClassPackage2
+                            Case Else
+                                other = True
                             End Select
 
-                            matchFound2 = False
-                            For a = 1 To UBound(SheetArray, 1)
-                                For b = 1 To UBound(SheetArray, 2)
-                                    ' if it finds the wholesale rate in the corresponding sheetarray
-                                    If SheetArray(a, b) Like cBusinessFacilitating(iBusinessFacilitating, 14) Then
-                                        ' looks for the same coordinates from sheet array one, in sheet array 2
-                                        cBusinessFacilitating(iBusinessFacilitating, 14) = SheetArray2(a, b)
-                                        ' calculates total for the row by subtracting retail from wholesale minus credit card fee and the endicia min fee
-                                        cBusinessFacilitating(iBusinessFacilitating, 15) = cBusinessFacilitating(iBusinessFacilitating, 13) - cBusinessFacilitating(iBusinessFacilitating, 14) - cBusinessFacilitating(iBusinessFacilitating, 12) - cBusinessFacilitating(iBusinessFacilitating,26)
-                                        ' row total is the same as the margin column
-                                        cBusinessFacilitating(iBusinessFacilitating, 27) = cBusinessFacilitating(iBusinessFacilitating, 15)
-                                        matchFound2 = True
-                                        Exit For
-                                    End If
-                                Next b
-                                If matchFound2 Then Exit For
-                            Next a
+                            If other Then
+                                ' calculates total for the row by subtracting retail from wholesale
+                                cBusinessFacilitating(iBusinessFacilitating, 15) = cBusinessFacilitating(iBusinessFacilitating, 13) - cBusinessFacilitating(iBusinessFacilitating, 14)
+                                ' row total is the same as the margin column
+                                cBusinessFacilitating(iBusinessFacilitating, 27) = cBusinessFacilitating(iBusinessFacilitating, 15)
+                                matchFound2 = True
+                            Else
+                                matchFound2 = False
+                                For a = 1 To UBound(SheetArray, 1)
+                                    For b = 1 To UBound(SheetArray, 2)
+                                        ' if it finds the wholesale rate in the corresponding sheetarray
+                                        If SheetArray(a, b) Like cBusinessFacilitating(iBusinessFacilitating, 14) Then
+                                            ' looks for the same coordinates from sheet array one, in sheet array 2
+                                            cBusinessFacilitating(iBusinessFacilitating, 14) = SheetArray2(a, b)
+                                            ' calculates total for the row by subtracting retail from wholesale
+                                            cBusinessFacilitating(iBusinessFacilitating, 15) = cBusinessFacilitating(iBusinessFacilitating, 13) - cBusinessFacilitating(iBusinessFacilitating, 14)
+                                            ' row total is the same as the margin column
+                                            cBusinessFacilitating(iBusinessFacilitating, 27) = cBusinessFacilitating(iBusinessFacilitating, 15)
+                                            matchFound2 = True
+                                            Exit For
+                                        End If
+                                    Next b
+                                    If matchFound2 Then Exit For
+                                Next a
+                            End If
                             ' if it cant find the wholesale value in the sheet array, put an err in the total column
                             If Not matchFound2 Then
-                                cBusinessFacilitating(iBusinessFacilitating, 27) = "err"
+                                cBusinessFacilitating(iBusinessFacilitating, 27) = "error: this row will not be reflected in the totals"
                                 bBusinessFacilitating = true
-                            End if
+                            End If
                             ' if there are no errors and its a refund
                             If matchFound2 And cBusinessFacilitating(iBusinessFacilitating, 10) = "POSTAGE REFUND" Then
                                 rBusinessFacilitating = rBusinessFacilitating + cBusinessFacilitating(iBusinessFacilitating, 27)
                             ' if there are no errors and its a print
-                            Elseif matchFound2 And cBusinessFacilitating(iBusinessFacilitating, 10) = "POSTAGE PRINT" Then
+                            Elseif matchFound2 And cBusinessFacilitating(iBusinessFacilitating, 10) <> "POSTAGE REFUND" Then
                                 tBusinessFacilitating = tBusinessFacilitating + cBusinessFacilitating(iBusinessFacilitating, 27)
-                            End if
-
+                                ' this puts the endicia min fee into the total for each rep
+                                feeBusinessFacilitating = feeBusinessFacilitating + cBusinessFacilitating(iBusinessFacilitating, 26)
+                                'this puts the cc fee into the total credit card contatiner for the rep'
+                                creditBusinessFacilitating = creditBusinessFacilitating + cBusinessFacilitating(iBusinessFacilitating, 12)
+                            End If
+                            other = False
                             iBusinessFacilitating = iBusinessFacilitating + 1
 
                         Case "UnitedEx"
@@ -379,14 +388,18 @@ Sub Transform()
     Sheets("CMG").Range("AB" & iCMG + 6).Value = tCMG - rCMG - creditCMG - feeCMG
 
     Sheets("Business Facilitating").Range("A2:AB" & UBound(cBusinessFacilitating, 1)).Value = cBusinessFacilitating
-    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 2).Value = "Subtotal"
-    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 2).Value = tBusinessFacilitating
-    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 3).Value = "Returns"
-    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 3).Value = rBusinessFacilitating
-    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 4).Value = "Total"
-    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 4).Value = tBusinessFacilitating - rBusinessFacilitating
-    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 6).Value = "Errors"
-    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 6).Value = bBusinessFacilitating
+    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 2).Value = "Errors"
+    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 2).Value = bBusinessFacilitating
+    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 3).Value = "Subtotal"
+    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 3).Value = tBusinessFacilitating
+    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 4).Value = "Credit Card Fees"
+    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 4).Value = creditBusinessFacilitating
+    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 5).Value = "Endicia Fees"
+    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 5).Value = feeBusinessFacilitating
+    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 6).Value = "Refunds"
+    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 6).Value = rBusinessFacilitating
+    Sheets("Business Facilitating").Range("AA" & iBusinessFacilitating + 7).Value = "Total"
+    Sheets("Business Facilitating").Range("AB" & iBusinessFacilitating + 7).Value = tBusinessFacilitating - rBusinessFacilitating - creditBusinessFacilitating - feeBusinessFacilitating
 
     Sheets("UnitedEx").Range("A2:AB" & UBound(cUnitedEx, 1)).Value = cUnitedEx
     Sheets("UnitedEx").Range("AA" & iUnitedEx + 2).Value = "Subtotal"
@@ -430,7 +443,4 @@ End Sub
 
 'TODO:
 'Add a button that clears the original report.
-'What do I do for "Parcel" in package type column
-' -anything that is first class and not '
-'- also skip anything that is media mail, library mail, '
-'Why does business facilitating sum of all rows and total have a difference of .02?
+'Need to figure out why look ups subtotal is slightly off.
